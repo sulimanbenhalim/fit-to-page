@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitToPage.js Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: white;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 0;
+            border-bottom: 2px solid #1a1a1a;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 16px;
+            color: #666;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: #f8f8f8;
+            padding: 30px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .card h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #1a1a1a;
+        }
+
+        .card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .card li {
+            padding: 10px 0;
+            padding-left: 20px;
+            position: relative;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .card li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+
+        .card li:last-child {
+            border-bottom: none;
+        }
+
+        .features {
+            margin-bottom: 40px;
+        }
+
+        .features h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .feature-item {
+            background: #fafafa;
+            padding: 20px;
+            border-left: 3px solid #1a1a1a;
+        }
+
+        .feature-item h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .feature-item p {
+            font-size: 14px;
+            color: #666;
+        }
+
+        footer {
+            text-align: center;
+            padding-top: 40px;
+            border-top: 1px solid #e0e0e0;
+            margin-top: 40px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .instructions {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #856404;
+        }
+
+        .instructions p {
+            color: #856404;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>FitToPage.js Demo</h1>
+            <p>Automatically fit HTML content to a single PDF page</p>
+        </header>
+
+        <div class="instructions">
+            <h3>📋 How to Test</h3>
+            <p><strong>1.</strong> Press Cmd+P (Mac) or Ctrl+P (Windows/Linux)</p>
+            <p><strong>2.</strong> Select "Save as PDF" as the destination</p>
+            <p><strong>3.</strong> Notice everything fits on ONE page!</p>
+        </div>
+
+        <div class="demo-grid">
+            <div class="card">
+                <h2>Features</h2>
+                <ul>
+                    <li>Automatic content measurement</li>
+                    <li>Dynamic @page CSS injection</li>
+                    <li>Works with native browser print</li>
+                    <li>Zero dependencies</li>
+                    <li>Lightweight (~2KB)</li>
+                    <li>Preserves text (not image-based)</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>Configuration Options</h2>
+                <ul>
+                    <li>Custom element selector</li>
+                    <li>Adjustable margins and padding</li>
+                    <li>Orientation control (auto/portrait/landscape)</li>
+                    <li>Debug mode with dimension info</li>
+                    <li>Page break prevention</li>
+                    <li>Ready callback support</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="features">
+            <h2>Why FitToPage.js?</h2>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <h3>Native Print Support</h3>
+                    <p>Works seamlessly with Cmd+P / Ctrl+P. No custom PDF generation needed.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>Smart Measurement</h3>
+                    <p>Automatically calculates content dimensions and sets optimal page size.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>Text Preserved</h3>
+                    <p>Unlike image-based solutions, text remains selectable and searchable.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>Zero Dependencies</h3>
+                    <p>Pure vanilla JavaScript. No jQuery, no frameworks, no bloat.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>Lightweight</h3>
+                    <p>Only ~2KB minified. Won't slow down your page load.</p>
+                </div>
+                <div class="feature-item">
+                    <h3>Easy Integration</h3>
+                    <p>Just call FitToPage.init() and you're done. Simple API.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Usage Example</h2>
+            <pre style="background: #f5f5f5; padding: 15px; overflow-x: auto; font-size: 13px; line-height: 1.4;"><code>&lt;script src="fit-to-page.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+    FitToPage.init({
+        selector: '.container',
+        margin: 10,
+        padding: 5,
+        orientation: 'auto',
+        debug: true
+    });
+&lt;/script&gt;</code></pre>
+        </div>
+
+        <footer>
+            <p><strong>FitToPage.js</strong> - MIT License</p>
+            <p>Created by Suliman Benhalim</p>
+        </footer>
+    </div>
+
+    <script src="fit-to-page.js"></script>
+    <script>
+        FitToPage.init({
+            selector: '.container',
+            margin: 10,
+            padding: 5,
+            debug: true,
+            onReady: function(info) {
+                console.log('FitToPage ready!');
+                console.log('Content dimensions:', info.width, 'x', info.height);
+                console.log('PDF page size:', info.pageSize);
+            }
+        });
+    </script>
+</body>
+</html>

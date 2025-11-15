@@ -1,0 +1,42 @@
+{
+  "name": "fit-to-page",
+  "version": "1.0.0",
+  "description": "Lightweight JavaScript library that automatically fits HTML content to a single PDF page when printing",
+  "main": "fit-to-page.js",
+  "scripts": {
+    "build": "terser fit-to-page.js -c -m --comments false -o fit-to-page.min.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "pdf",
+    "print",
+    "single-page",
+    "fit-to-page",
+    "auto-fit",
+    "html-to-pdf",
+    "print-css",
+    "page-size",
+    "one-page-pdf",
+    "lightweight",
+    "vanilla-js"
+  ],
+  "author": "Suliman Benhalim <soliman.benhalim@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sulimanbenhalim/fit-to-page.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sulimanbenhalim/fit-to-page/issues"
+  },
+  "homepage": "https://github.com/sulimanbenhalim/fit-to-page#readme",
+  "files": [
+    "fit-to-page.js",
+    "fit-to-page.min.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "devDependencies": {
+    "terser": "^5.44.1"
+  }
+}
