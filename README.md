@@ -132,9 +132,16 @@ FitToPage.init({
 
 ## Browser Support
 
-- Chrome/Edge (recommended - best `@page` support)
-- Firefox
-- Safari
+| Browser | Supported |
+|---------|-----------|
+| Chrome | Yes |
+| Edge | Yes |
+| Firefox | Yes |
+| Safari | No |
+
+**Safari is not supported.** Safari ignores custom `@page { size }` declarations entirely — it computes page breaks before any print CSS or JavaScript is applied, which makes it impossible to dynamically set the page size from the browser. This is a fundamental limitation of Safari's print rendering engine and cannot be worked around client-side.
+
+If you need single-page PDF output from Safari, consider a server-side solution such as Puppeteer or headless Chrome.
 
 ## License
 
