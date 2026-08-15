@@ -5,7 +5,9 @@
   "main": "fit-to-page.js",
   "scripts": {
     "build": "terser fit-to-page.js -c -m --comments false -o fit-to-page.min.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test \"test/*.test.js\"",
+    "check:build": "npm run build && git diff --exit-code fit-to-page.min.js",
+    "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
     "pdf",
@@ -37,6 +39,7 @@
     "LICENSE"
   ],
   "devDependencies": {
+    "jsdom": "^29.1.1",
     "terser": "^5.44.1"
   }
 }

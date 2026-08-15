@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test on Node ${{ matrix.node-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['22.x', '24.x']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm test
+
+  build:
+    name: Minified build is in sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: npm
+
+      - run: npm ci
+
+      # fit-to-page.min.js is committed and published to npm/jsDelivr, so a
+      # stale build ships to every CDN consumer. Rebuild and fail on any drift.
+      - name: Rebuild and check for drift
+        run: npm run check:build
+
+      - name: Explain the failure
+        if: failure()
+        run: echo "::error file=fit-to-page.min.js::fit-to-page.min.js is out of date. Run 'npm run build' and commit the result."

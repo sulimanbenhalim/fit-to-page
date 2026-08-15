@@ -18,6 +18,3 @@ Thumbs.db
 
 # Build
 dist/
-
-# npm
-package-lock.json
