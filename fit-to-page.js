@@ -10,6 +10,14 @@
 (function(window) {
     'use strict';
 
+    const MM_PER_INCH = 25.4;
+
+    // PDF's architectural limit is 14400 user-space units (200in) per side.
+    // A larger page cannot be represented, so the output spills onto more sheets.
+    const MAX_PAGE_MM = 200 * MM_PER_INCH;
+
+    const VALID_ORIENTATIONS = ['auto', 'portrait', 'landscape'];
+
     const FitToPage = {
         version: '1.0.0',
 
@@ -37,13 +45,55 @@
          * @param {Object} options - Configuration options
          */
         init: function(options) {
-            this.config = Object.assign({}, this.defaults, options);
+            this.config = this.resolveConfig(options);
 
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', () => this.measure());
-            } else {
+            // Images and stylesheets are still in flight at DOMContentLoaded, so
+            // measuring there reports content shorter than it ends up being and
+            // the overflow lands on a second page. 'complete' is the first point
+            // at which layout is final.
+            if (document.readyState === 'complete') {
                 this.measure();
+            } else {
+                window.addEventListener('load', () => this.measure(), { once: true });
             }
+        },
+
+        /**
+         * Merge options over the defaults, rejecting values that would produce an
+         * unusable @page rule.
+         * @param {Object} options - Configuration options
+         * @returns {Object} Validated configuration
+         */
+        resolveConfig: function(options) {
+            const config = Object.assign({}, this.defaults);
+
+            // Object.assign copies an explicit undefined straight over the default,
+            // so `init({ dpi: someUnsetVar })` would divide by undefined and put
+            // NaN in the @page size, voiding the declaration.
+            Object.keys(options || {}).forEach((key) => {
+                if (options[key] !== undefined) {
+                    config[key] = options[key];
+                }
+            });
+
+            ['dpi', 'margin', 'padding'].forEach((key) => {
+                const value = Number(config[key]);
+                const usable = isFinite(value) && (key === 'dpi' ? value > 0 : value >= 0);
+
+                if (!usable) {
+                    console.warn(`FitToPage: ignoring invalid ${key} "${config[key]}", using ${this.defaults[key]}`);
+                    config[key] = this.defaults[key];
+                } else {
+                    config[key] = value;
+                }
+            });
+
+            if (VALID_ORIENTATIONS.indexOf(config.orientation) === -1) {
+                console.warn(`FitToPage: unknown orientation "${config.orientation}", using "auto"`);
+                config.orientation = this.defaults.orientation;
+            }
+
+            return config;
         },
 
         /**
@@ -52,60 +102,94 @@
          * @returns {number} Millimeters
          */
         pxToMm: function(px) {
-            return (px * 25.4 / this.config.dpi);
+            return (px * MM_PER_INCH / this.config.dpi);
+        },
+
+        /**
+         * Format a millimeter value as a CSS length, rounded up to the next 0.1mm.
+         * toFixed() rounds to nearest, which can declare a page up to 0.05mm
+         * smaller than the content needs and push the overflow onto a second page.
+         * @param {number} mm - Millimeters
+         * @returns {string} CSS length
+         */
+        toMm: function(mm) {
+            // The epsilon keeps a value already on a 0.1mm boundary from being
+            // nudged up a step by binary floating point.
+            return (Math.ceil((mm * 10) - 1e-9) / 10).toFixed(1) + 'mm';
+        },
+
+        /**
+         * Smallest page that holds the content and satisfies the requested
+         * orientation. A forced orientation grows the short side; swapping the two
+         * would leave the page smaller than the content it has to hold.
+         * @param {number} widthMm - Width the content needs
+         * @param {number} heightMm - Height the content needs
+         * @returns {{width: number, height: number}} Page size in mm
+         */
+        fitPage: function(widthMm, heightMm) {
+            if (this.config.orientation === 'landscape') {
+                return { width: Math.max(widthMm, heightMm), height: heightMm };
+            }
+
+            if (this.config.orientation === 'portrait') {
+                return { width: widthMm, height: Math.max(widthMm, heightMm) };
+            }
+
+            return { width: widthMm, height: heightMm };
         },
 
         /**
          * Measure content dimensions
+         * @returns {Object|null} Measurements, or null when the element is missing
          */
         measure: function() {
             const element = document.querySelector(this.config.selector);
 
             if (!element) {
                 console.error(`FitToPage: Element "${this.config.selector}" not found`);
-                return;
+                return null;
             }
 
             // Get actual rendered dimensions
             const width = element.scrollWidth;
             const height = element.scrollHeight;
 
-            // Convert to mm and add margins
-            const widthMm = this.pxToMm(width) + (this.config.margin * 2) + this.config.padding;
-            const heightMm = this.pxToMm(height) + (this.config.margin * 2) + this.config.padding;
+            if (width <= 0 || height <= 0) {
+                console.warn(`FitToPage: "${this.config.selector}" measured ${width}x${height}px - hidden or empty content cannot be fitted`);
+            }
 
-            // Determine orientation
-            let pageWidth = widthMm;
-            let pageHeight = heightMm;
+            // The page carries the content, a margin on both sides and the padding
+            // as slack, which leaves a printable area of content + padding.
+            const overheadMm = (this.config.margin * 2) + this.config.padding;
+            const widthMm = this.pxToMm(width) + overheadMm;
+            const heightMm = this.pxToMm(height) + overheadMm;
 
-            if (this.config.orientation === 'landscape' ||
-                (this.config.orientation === 'auto' && widthMm > heightMm)) {
-                // Ensure landscape
-                pageWidth = Math.max(widthMm, heightMm);
-                pageHeight = Math.min(widthMm, heightMm);
-            } else if (this.config.orientation === 'portrait' ||
-                       (this.config.orientation === 'auto' && heightMm >= widthMm)) {
-                // Ensure portrait
-                pageWidth = Math.min(widthMm, heightMm);
-                pageHeight = Math.max(widthMm, heightMm);
+            const page = this.fitPage(widthMm, heightMm);
+
+            if (page.width > MAX_PAGE_MM || page.height > MAX_PAGE_MM) {
+                console.warn(`FitToPage: ${page.width.toFixed(1)}x${page.height.toFixed(1)}mm exceeds the ${MAX_PAGE_MM}mm PDF page limit - the output will span multiple pages`);
             }
 
             // Inject CSS
-            this.injectCSS(pageWidth, pageHeight);
+            this.injectCSS(page.width, page.height);
 
             // Show debug info if enabled
             if (this.config.debug) {
-                this.showDebugInfo(width, height, pageWidth, pageHeight);
+                this.showDebugInfo(width, height, page.width, page.height);
             }
+
+            const info = {
+                width: { px: width, mm: widthMm },
+                height: { px: height, mm: heightMm },
+                pageSize: { width: page.width, height: page.height }
+            };
 
             // Call ready callback
             if (typeof this.config.onReady === 'function') {
-                this.config.onReady({
-                    width: { px: width, mm: widthMm },
-                    height: { px: height, mm: heightMm },
-                    pageSize: { width: pageWidth, height: pageHeight }
-                });
+                this.config.onReady(info);
             }
+
+            return info;
         },
 
         /**
@@ -124,7 +208,7 @@
 
             const css = `
                 @page {
-                    size: ${width.toFixed(1)}mm ${height.toFixed(1)}mm;
+                    size: ${this.toMm(width)} ${this.toMm(height)};
                     margin: ${this.config.margin}mm;
                 }
 
@@ -187,13 +271,15 @@
                 max-width: 300px;
             `;
 
+            // Report the same rounded values that went into the @page rule, so the
+            // box never disagrees with what the browser was actually told.
             debugBox.innerHTML = `
                 <strong>📄 FitToPage Debug</strong><br><br>
                 <strong>Content:</strong><br>
                 ${widthPx}px × ${heightPx}px<br>
                 ${this.pxToMm(widthPx).toFixed(1)}mm × ${this.pxToMm(heightPx).toFixed(1)}mm<br><br>
                 <strong>PDF Page Size:</strong><br>
-                ${pageWidth.toFixed(1)}mm × ${pageHeight.toFixed(1)}mm<br><br>
+                ${this.toMm(pageWidth)} × ${this.toMm(pageHeight)}<br><br>
                 <em>Press Cmd+P / Ctrl+P to test!</em>
             `;
 
@@ -202,9 +288,10 @@
 
         /**
          * Manually trigger remeasure (useful for dynamic content)
+         * @returns {Object|null} Measurements, or null when the element is missing
          */
         remeasure: function() {
-            this.measure();
+            return this.measure();
         }
     };
 

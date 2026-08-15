@@ -59,6 +59,18 @@ document.getElementById('load-more').onclick = () => {
 };
 ```
 
+### Timing
+
+Measuring happens on `window.load`. Images and stylesheets are still in flight at
+`DOMContentLoaded`, so measuring there reports content shorter than it ends up being
+and the overflow lands on a second page.
+
+Web fonts can still swap in after `load` and change text metrics. If you use them:
+
+```javascript
+document.fonts.ready.then(() => FitToPage.remeasure());
+```
+
 ## Configuration
 
 | Option | Type | Default | Description |
@@ -67,7 +79,7 @@ document.getElementById('load-more').onclick = () => {
 | `margin` | number | `10` | Page margin in mm |
 | `padding` | number | `5` | Extra padding in mm |
 | `dpi` | number | `96` | Screen DPI for px→mm conversion |
-| `orientation` | string | `'auto'` | Page orientation |
+| `orientation` | string | `'auto'` | `'auto'` follows the content; forcing one grows the short side so content still fits |
 | `debug` | boolean | `false` | Show dimension info box |
 | `preventPageBreaks` | boolean | `true` | Prevent content breaking across pages |
 | `onReady` | function | `null` | Callback when ready |
@@ -129,6 +141,13 @@ FitToPage.init({
 | Client-side only | ✓ | ✓ | ✗ | ✓ |
 | Zero dependencies | ✓ | ✗ | ✗ | ✗ |
 | Size <5KB | ✓ | ✗ | ✗ | ✓ |
+
+## Limits
+
+A PDF page cannot exceed 14400 units (200in / 5080mm) on a side. At 96dpi that caps
+content at roughly 19,000px in one dimension; past that the output splits across pages
+no matter what `@page` asks for. FitToPage logs a warning when the computed page crosses
+that line rather than failing silently.
 
 ## Browser Support
 
